@@ -109,4 +109,24 @@
     	</config-file>
 	</platform>
 
+    <!-- ios -->
+    <platform name="ios">
+        <config-file target="config.xml" parent="/*">
+            <feature name="PushNotification">
+                <param name="ios-package" value="PushPlugin"/>
+            </feature>
+        </config-file>
+        
+        <config-file target="*-Info.plist" parent="UIBackgroundModes">
+            <array>
+                <string>remote-notification</string>
+            </array>    
+        </config-file>
+
+        <hook type="after_plugin_install" src="scripts/ios/app-delegate.js" />
+
+        <header-file src="src/ios/PushPlugin.h" />
+        <source-file src="src/ios/PushPlugin.m" />
+    </platform>
+
 </plugin>
