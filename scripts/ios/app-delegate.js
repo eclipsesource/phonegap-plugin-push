@@ -34,12 +34,10 @@ if (rootdir) {
     var updateIOSAppDelegate = function() {
       var appDelegate = getProjectFile("ios", "Classes/AppDelegate.m");
       var projectName = cfg.name();
-      var importReplace = "#import \"AppDelegate.h\"";
-      var defineReplace = "@interface AppDelegate ()";
-      var methodsReplace = "#endif\n\n@end";
-      replace(appDelegate, importReplace, importReplace + "\n#import \"PushPlugin.h\"");
-      replace(appDelegate, defineReplace, "#define DISABLE_PUSH_NOTIFICATIONS\n\n" + defineReplace);
-      replace(appDelegate, methodsReplace, "#endif\n\n- (void)application:(UIApplication *)application didRegisterUserNotificationSettings:(UIUserNotificationSettings *)notificationSettings {\n\tif (notificationSettings.types != UIUserNotificationTypeNone) {\n\t\t[application registerForRemoteNotifications];\n\t}\n}\n\n- (void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {\n\t[[NSNotificationCenter defaultCenter] postNotificationName:PUSH_NOTIF_REGISTER_SUCCESS object:deviceToken];\n}\n\n- (void)application:(UIApplication *)application didFailToRegisterForRemoteNotificationsWithError:(NSError *)error {\n\t[[NSNotificationCenter defaultCenter] postNotificationName:PUSH_NOTIF_REGISTER_FAILED object:error];\n}\n\n- (void)application:(UIApplication *)application didReceiveRemoteNotification:(NSDictionary *)userInfo fetchCompletionHandler:(void (^)(UIBackgroundFetchResult))completionHandler {\n\tNSDictionary *aps = [userInfo objectForKey:@\"aps\"];\n\t[[NSNotificationCenter defaultCenter] postNotificationName:PUSH_NOTIF_NOTIFICATION_RECEIVED object:userInfo];\n\tcompletionHandler(aps ? UIBackgroundFetchResultNewData : UIBackgroundFetchResultNoData);\n}\n\n@end");
+      var importReplace = "/* HOOK: import classes for registration */";
+      var methodsReplace = "@end";
+      replace(appDelegate, importReplace, "\n#import \"PushPlugin.h\"\n" + importReplace);
+      replace(appDelegate, methodsReplace, "- (void)application:(UIApplication *)application didRegisterUserNotificationSettings:(UIUserNotificationSettings *)notificationSettings {\n\tif (notificationSettings.types != UIUserNotificationTypeNone) {\n\t\t[application registerForRemoteNotifications];\n\t}\n}\n\n- (void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {\n\t[[NSNotificationCenter defaultCenter] postNotificationName:PUSH_NOTIF_REGISTER_SUCCESS object:deviceToken];\n}\n\n- (void)application:(UIApplication *)application didFailToRegisterForRemoteNotificationsWithError:(NSError *)error {\n\t[[NSNotificationCenter defaultCenter] postNotificationName:PUSH_NOTIF_REGISTER_FAILED object:error];\n}\n\n- (void)application:(UIApplication *)application didReceiveRemoteNotification:(NSDictionary *)userInfo fetchCompletionHandler:(void (^)(UIBackgroundFetchResult))completionHandler {\n\tNSDictionary *aps = [userInfo objectForKey:@\"aps\"];\n\t[[NSNotificationCenter defaultCenter] postNotificationName:PUSH_NOTIF_NOTIFICATION_RECEIVED object:userInfo];\n\tcompletionHandler(aps ? UIBackgroundFetchResultNewData : UIBackgroundFetchResultNoData);\n}\n\n@end");
     };
 
     updateIOSAppDelegate();
