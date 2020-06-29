@@ -91,9 +91,7 @@
 */
 
 - (void)didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {
-    NSString *token = [[[[deviceToken description] stringByReplacingOccurrencesOfString:@"<"withString:@""]
-                        stringByReplacingOccurrencesOfString:@">" withString:@""]
-                       stringByReplacingOccurrencesOfString: @" " withString: @""];
+    NSString *token = [deviceToken base64EncodedStringWithOptions:0];
     [self registerWithToken:token];
 }
 
