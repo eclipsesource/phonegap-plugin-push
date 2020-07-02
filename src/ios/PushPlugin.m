@@ -91,8 +91,29 @@
 */
 
 - (void)didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {
-    NSString *token = [deviceToken base64EncodedStringWithOptions:0];
+    #if __IPHONE_OS_VERSION_MAX_ALLOWED >= 130000
+        // [deviceToken description] is like "{length = 32, bytes = 0xd3d997af 967d1f43 b405374a 13394d2f ... 28f10282 14af515f }"
+        NSString *token = [self hexadecimalStringFromData:deviceToken];
+    #else
+        // [deviceToken description] is like "<124686a5 556a72ca d808f572 00c323b9 3eff9285 92445590 3225757d b83967be>"
+        NSString *token = [[[[deviceToken description] stringByReplacingOccurrencesOfString:@"<"withString:@""]
+                            stringByReplacingOccurrencesOfString:@">" withString:@""]
+                           stringByReplacingOccurrencesOfString: @" " withString: @""];
+    #endif
     [self registerWithToken:token];
+}
+
+- (NSString *)hexadecimalStringFromData:(NSData *)data {
+    NSUInteger dataLength = data.length;
+    if (dataLength == 0) {
+        return nil;
+    }
+    const unsigned char *dataBuffer = data.bytes;
+    NSMutableString *hexString  = [NSMutableString stringWithCapacity:(dataLength * 2)];
+    for (int i = 0; i < dataLength; ++i) {
+        [hexString appendFormat:@"%02x", dataBuffer[i]];
+    }
+    return [hexString copy];
 }
 
 -(void)registerWithToken:(NSString*)token; {
