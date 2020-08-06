@@ -25,6 +25,17 @@ if (rootdir) {
       return path.join(projectRoot, "platforms", platform, cfg.name(), relPath);
     };
 
+    var appendTo = function(path, methodHeader, implementation) {
+      var data = fs.readFileSync(path, "utf8");
+      var indexOfMethodHeader = data.indexOf(methodHeader);
+      if (indexOfMethodHeader == -1) {
+        return false;        
+      }
+      var result = data.replace(methodHeader, methodHeader + '\n' + implementation);
+      fs.writeFileSync(path, result, "utf8");
+      return true;
+    };
+
     var replace = function(path, to_replace, replace_with) {
       var data = fs.readFileSync(path, "utf8");
       var result = data.replace(to_replace, replace_with);
@@ -37,7 +48,35 @@ if (rootdir) {
       var importReplace = "/* HOOK: import classes for registration */";
       var methodsReplace = "@end";
       replace(appDelegate, importReplace, "\n#import \"PushPlugin.h\"\n" + importReplace);
-      replace(appDelegate, methodsReplace, "- (void)application:(UIApplication *)application didRegisterUserNotificationSettings:(UIUserNotificationSettings *)notificationSettings {\n\tif (notificationSettings.types != UIUserNotificationTypeNone) {\n\t\t[application registerForRemoteNotifications];\n\t}\n}\n\n- (void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {\n\t[[NSNotificationCenter defaultCenter] postNotificationName:PUSH_NOTIF_REGISTER_SUCCESS object:deviceToken];\n}\n\n- (void)application:(UIApplication *)application didFailToRegisterForRemoteNotificationsWithError:(NSError *)error {\n\t[[NSNotificationCenter defaultCenter] postNotificationName:PUSH_NOTIF_REGISTER_FAILED object:error];\n}\n\n- (void)application:(UIApplication *)application didReceiveRemoteNotification:(NSDictionary *)userInfo fetchCompletionHandler:(void (^)(UIBackgroundFetchResult))completionHandler {\n\tNSDictionary *aps = [userInfo objectForKey:@\"aps\"];\n\t[[NSNotificationCenter defaultCenter] postNotificationName:PUSH_NOTIF_NOTIFICATION_RECEIVED object:userInfo];\n\tcompletionHandler(aps ? UIBackgroundFetchResultNewData : UIBackgroundFetchResultNoData);\n}\n\n@end");
+      // replace(appDelegate, methodsReplace, "- (void)application:(UIApplication *)application didRegisterUserNotificationSettings:(UIUserNotificationSettings *)notificationSettings {\n\tif (notificationSettings.types != UIUserNotificationTypeNone) {\n\t\t[application registerForRemoteNotifications];\n\t}\n}\n\n- (void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {\n\t[[NSNotificationCenter defaultCenter] postNotificationName:PUSH_NOTIF_REGISTER_SUCCESS object:deviceToken];\n}\n\n- (void)application:(UIApplication *)application didFailToRegisterForRemoteNotificationsWithError:(NSError *)error {\n\t[[NSNotificationCenter defaultCenter] postNotificationName:PUSH_NOTIF_REGISTER_FAILED object:error];\n}\n\n- (void)application:(UIApplication *)application didReceiveRemoteNotification:(NSDictionary *)userInfo fetchCompletionHandler:(void (^)(UIBackgroundFetchResult))completionHandler {\n\tNSDictionary *aps = [userInfo objectForKey:@\"aps\"];\n\t[[NSNotificationCenter defaultCenter] postNotificationName:PUSH_NOTIF_NOTIFICATION_RECEIVED object:userInfo];\n\tcompletionHandler(aps ? UIBackgroundFetchResultNewData : UIBackgroundFetchResultNoData);\n}\n\n@end");
+
+      var header = '- (void)application:(UIApplication *)application didRegisterUserNotificationSettings:(UIUserNotificationSettings *)notificationSettings {';
+      var implementation = "\tif (notificationSettings.types != UIUserNotificationTypeNone) {\n" + "\t\t[application registerForRemoteNotifications];\n" + "\t}\n";
+      var method = header + "\n" + implementation + '}';
+      if (!appendTo(appDelegate, header, implementation)) {
+        replace(appDelegate, "@end", method + "\n" + "@end");
+      }
+
+      header = '- (void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {';
+      implementation = "\t[[NSNotificationCenter defaultCenter] postNotificationName:PUSH_NOTIF_REGISTER_SUCCESS object:deviceToken];\n";
+      method = header + "\n" + implementation + '}';
+      if (!appendTo(appDelegate, header, implementation)) {
+        replace(appDelegate, "@end", method + "\n" + "@end");
+      }
+
+      header = '- (void)application:(UIApplication *)application didFailToRegisterForRemoteNotificationsWithError:(NSError *)error {';
+      implementation = "\t[[NSNotificationCenter defaultCenter] postNotificationName:PUSH_NOTIF_REGISTER_FAILED object:error];\n";
+      method = header + "\n" + implementation + '}';
+      if (!appendTo(appDelegate, header, implementation)) {
+        replace(appDelegate, "@end", method + "\n" + "@end");
+      }
+
+      header = '- (void)application:(UIApplication *)application didReceiveRemoteNotification:(NSDictionary *)userInfo fetchCompletionHandler:(nonnull void (^)(UIBackgroundFetchResult))completionHandler {';
+      implementation = "\t[[NSNotificationCenter defaultCenter] postNotificationName:PUSH_NOTIF_NOTIFICATION_RECEIVED object:userInfo];\n" + "\tcompletionHandler([userInfo objectForKey:@\"aps\"]);\n"
+      method = header + "\n" + "\t[[NSNotificationCenter defaultCenter] postNotificationName:PUSH_NOTIF_NOTIFICATION_RECEIVED object:userInfo];\n" + '}';
+      if (!appendTo(appDelegate, header, implementation)) {
+        replace(appDelegate, "@end", method + "\n" + "@end");
+      }
     };
 
     updateIOSAppDelegate();
